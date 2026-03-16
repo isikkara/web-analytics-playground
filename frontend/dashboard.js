@@ -81,6 +81,30 @@ function renderTopPages(pages) {
     .join('');
 }
 
+function renderButtonClicks(clicks) {
+  const tbody = el('button-clicks-table');
+  if (!clicks || !clicks.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">No button clicks recorded yet</td></tr>';
+    return;
+  }
+  const max = Math.max(...clicks.map((c) => c.count));
+  tbody.innerHTML = clicks
+    .map(
+      (c) => `
+      <tr>
+        <td><code>${esc(c.button_id || '—')}</code></td>
+        <td>${esc(c.button_text || '—')}</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:${Math.round((c.count / max) * 100)}%"></div>
+            <span>${c.count.toLocaleString()}</span>
+          </div>
+        </td>
+      </tr>`
+    )
+    .join('');
+}
+
 // Inline SVG line chart — no external libraries.
 // Renders hourly event counts for the last 24 hours.
 function renderHourlyChart(points) {
@@ -158,6 +182,7 @@ async function update() {
     renderEventTable(data.events_by_name);
     renderHourlyChart(data.events_over_time);
     renderTopPages(data.top_pages);
+    renderButtonClicks(data.button_clicks);
     el('status').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
     el('status').style.color = '#22c55e';
   } catch (err) {

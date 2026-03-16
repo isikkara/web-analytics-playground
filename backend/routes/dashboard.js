@@ -41,6 +41,22 @@ const queryTopPages = db.prepare(`
   LIMIT 10
 `);
 
+// json_extract pulls values directly from the stored JSON string inside SQLite.
+// Grouping by both button_id and button_text keeps rows distinct when the same
+// button_id is used with different label text (e.g. A/B copy test), while still
+// collapsing identical (id, text) pairs into a single count.
+const queryButtonClicks = db.prepare(`
+  SELECT
+    json_extract(properties, '$.button_id')   AS button_id,
+    json_extract(properties, '$.button_text') AS button_text,
+    COUNT(*) AS count
+  FROM events
+  WHERE event_name = 'button_click'
+    AND properties IS NOT NULL
+  GROUP BY button_id, button_text
+  ORDER BY count DESC
+`);
+
 router.get('/', (req, res) => {
   try {
     const { total } = queryTotalEvents.get();
@@ -48,6 +64,7 @@ router.get('/', (req, res) => {
     const events_by_name = queryEventsByName.all();
     const events_over_time = queryEventsOverTime.all();
     const top_pages = queryTopPages.all();
+    const button_clicks = queryButtonClicks.all();
 
     res.json({
       total_events: total,
@@ -55,6 +72,7 @@ router.get('/', (req, res) => {
       events_by_name,
       events_over_time,
       top_pages,
+      button_clicks,
     });
   } catch (err) {
     console.error('Dashboard query error:', err.message);

@@ -27,6 +27,32 @@ const insertEvent = db.prepare(`
   VALUES (@event_name, @session_id, @page_url, @properties, @ip_hash)
 `);
 
+// Returns the last 100 raw events so the dashboard can inspect properties.
+// No rate limiter here — this is a read-only internal endpoint, not an
+// ingestion path, so flooding it doesn't pollute the database.
+const queryRecentEvents = db.prepare(`
+  SELECT id, event_name, session_id, page_url, properties, created_at
+  FROM events
+  ORDER BY id DESC
+  LIMIT 100
+`);
+
+router.get('/', (req, res) => {
+  try {
+    const rows = queryRecentEvents.all();
+    // Parse the properties JSON string back into an object so the client
+    // doesn't have to deal with double-serialised data.
+    const events = rows.map((r) => ({
+      ...r,
+      properties: r.properties ? JSON.parse(r.properties) : null,
+    }));
+    res.json({ events });
+  } catch (err) {
+    console.error('Events fetch error:', err.message);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 router.post('/', eventLimiter, validate, (req, res) => {
   const { event_name, session_id, page_url, properties } = req.validatedData;
 

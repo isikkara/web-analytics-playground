@@ -107,6 +107,16 @@
     .page-url { display: block; color: var(--accent-light); margin-bottom: .3rem; word-break: break-all; }
 
     .empty { color: var(--muted); font-size: .88rem; padding: 1.5rem 0; display: block; text-align: center; }
+
+    /* ── BUTTON CLICKS ── */
+    code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: .8rem;
+      background: rgba(108, 99, 255, 0.12);
+      color: var(--accent-light);
+      padding: .15rem .4rem;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -156,6 +166,23 @@
           <li class="empty">Loading…</li>
         </ul>
       </div>
+    </div>
+
+    <!-- Button Clicks breakdown -->
+    <div class="table-card" style="margin-top: 1.5rem;">
+      <div class="section-title">Button Clicks Breakdown</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Button ID</th>
+            <th>Label</th>
+            <th>Clicks</th>
+          </tr>
+        </thead>
+        <tbody id="button-clicks-table">
+          <tr><td colspan="3" class="empty">Loading…</td></tr>
+        </tbody>
+      </table>
     </div>
   </main>
 
