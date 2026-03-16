@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataFlow — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --border: #2e2e40;
+      --accent: #6c63ff;
+      --accent-light: #8b85ff;
+      --text: #e8e8f0;
+      --muted: #888;
+      --green: #22c55e;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,15,19,.95);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo { font-weight: 700; font-size: 1.2rem; color: var(--accent-light); }
+    #status { font-size: .82rem; color: var(--muted); }
+    header a { color: var(--muted); font-size: .88rem; text-decoration: none; }
+    header a:hover { color: var(--text); }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; }
+
+    /* ── KPI CARDS ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+    }
+    .kpi-label { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+    .kpi-value { font-size: 2.4rem; font-weight: 800; color: var(--accent-light); }
+
+    /* ── SECTION TITLE ── */
+    .section-title { font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1rem; }
+
+    /* ── CHART ── */
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    #hourly-chart {
+      width: 100%;
+      height: 180px;
+      display: block;
+    }
+
+    /* ── TWO-COL GRID ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── TABLE ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .65rem .5rem; font-size: .9rem; }
+    th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+    tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+
+    /* ── BAR ── */
+    .bar-wrap { display: flex; align-items: center; gap: .6rem; }
+    .bar-fill { height: 8px; border-radius: 4px; background: var(--accent); min-width: 2px; transition: width .4s; }
+    .bar-wrap span { font-size: .85rem; white-space: nowrap; }
+
+    /* ── TOP PAGES ── */
+    .table-card ul { list-style: none; }
+    .table-card li { padding: .65rem 0; border-bottom: 1px solid var(--border); font-size: .88rem; }
+    .table-card li:last-child { border-bottom: none; }
+    .page-url { display: block; color: var(--accent-light); margin-bottom: .3rem; word-break: break-all; }
+
+    .empty { color: var(--muted); font-size: .88rem; padding: 1.5rem 0; display: block; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">DataFlow — Dashboard</div>
+    <span id="status">Loading…</span>
+    <a href="index.html">← Back to Demo</a>
+  </header>
+
+  <main>
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Events</div>
+        <div class="kpi-value" id="total-events">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Unique Sessions</div>
+        <div class="kpi-value" id="unique-sessions">—</div>
+      </div>
+    </div>
+
+    <!-- Hourly chart -->
+    <div class="chart-card">
+      <div class="section-title">Events — Last 24 Hours</div>
+      <svg id="hourly-chart" aria-label="Hourly events chart"></svg>
+    </div>
+
+    <!-- Event table + Top pages -->
+    <div class="two-col">
+      <div class="table-card">
+        <div class="section-title">Events by Type</div>
+        <table>
+          <thead>
+            <tr><th>Event</th><th>Count</th></tr>
+          </thead>
+          <tbody id="events-table">
+            <tr><td colspan="2" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <div class="section-title">Top Pages</div>
+        <ul id="pages-list">
+          <li class="empty">Loading…</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

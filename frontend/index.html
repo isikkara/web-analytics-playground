@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataFlow — Analytics Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --border: #2e2e40;
+      --accent: #6c63ff;
+      --accent-light: #8b85ff;
+      --text: #e8e8f0;
+      --muted: #888;
+      --green: #22c55e;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(15, 15, 19, 0.92);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+    .logo { font-weight: 700; font-size: 1.25rem; color: var(--accent-light); }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(108, 99, 255, 0.15);
+      color: var(--accent-light);
+      border: 1px solid rgba(108, 99, 255, 0.3);
+      border-radius: 999px;
+      padding: .25rem .9rem;
+      font-size: .8rem;
+      margin-bottom: 1.5rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.15; margin-bottom: 1.2rem; }
+    h1 span { color: var(--accent-light); }
+    .hero p { font-size: 1.15rem; color: var(--muted); max-width: 540px; margin: 0 auto 2.5rem; }
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1.75rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(108, 99, 255, 0.35);
+    }
+    .btn-primary:hover { background: var(--accent-light); box-shadow: 0 6px 24px rgba(108, 99, 255, 0.5); }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent-light); }
+    .btn-success {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+    }
+    .btn-success:hover { filter: brightness(1.1); }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      padding: 2.5rem 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 2rem; font-weight: 800; color: var(--accent-light); }
+    .stat-label { font-size: .85rem; color: var(--muted); margin-top: .2rem; }
+
+    /* ── FEATURES ── */
+    .section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .section-title { font-size: 1.8rem; font-weight: 700; margin-bottom: .5rem; }
+    .section-subtitle { color: var(--muted); margin-bottom: 3rem; }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      transition: border-color .2s, transform .2s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+    .card h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+    .card p { color: var(--muted); font-size: .9rem; }
+
+    /* ── PRICING ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+    .pricing-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .pricing-card.featured {
+      border-color: var(--accent);
+      background: rgba(108, 99, 255, 0.08);
+    }
+    .price { font-size: 2.5rem; font-weight: 800; margin: 1rem 0; }
+    .price span { font-size: 1rem; color: var(--muted); font-weight: 400; }
+    .plan-features { list-style: none; text-align: left; margin: 1.5rem 0; }
+    .plan-features li { padding: .4rem 0; color: var(--muted); font-size: .9rem; }
+    .plan-features li::before { content: "✓ "; color: var(--green); }
+
+    /* ── TESTIMONIALS ── */
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .testimonial {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+    }
+    .testimonial blockquote { color: var(--muted); font-size: .95rem; margin-bottom: 1rem; }
+    .testimonial cite { font-size: .85rem; font-weight: 600; color: var(--accent-light); }
+
+    /* ── FAQ ── */
+    .faq { max-width: 680px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 1.25rem 0; }
+    .faq-item h4 { margin-bottom: .5rem; }
+    .faq-item p { color: var(--muted); font-size: .9rem; }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      text-align: center;
+      padding: 6rem 2rem;
+      background: linear-gradient(135deg, rgba(108,99,255,.08) 0%, transparent 100%);
+      border-top: 1px solid var(--border);
+    }
+    .cta-section h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; }
+    .cta-section p { color: var(--muted); margin-bottom: 2rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    footer a { color: var(--accent-light); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">DataFlow</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="dashboard.html">Dashboard ↗</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="badge">Now in Public Beta</div>
+    <h1>Analytics that<br /><span>respect your users</span></h1>
+    <p>Privacy-first web analytics with zero cookies, real-time dashboards, and a one-line install. Know what matters without the creep.</p>
+    <div class="hero-buttons">
+      <!-- data-track attributes mark elements that tracker.js will capture as button_click events -->
+      <button
+        id="cta-get-started"
+        class="btn btn-primary"
+        data-track="cta-get-started"
+      >
+        Get Started Free
+      </button>
+      <button
+        id="cta-live-demo"
+        class="btn btn-outline"
+        data-track="cta-live-demo"
+      >
+        View Live Demo
+      </button>
+    </div>
+  </section>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-value">12K+</div><div class="stat-label">Active Sites</div></div>
+    <div class="stat"><div class="stat-value">2.4B</div><div class="stat-label">Events Tracked</div></div>
+    <div class="stat"><div class="stat-value">99.9%</div><div class="stat-label">Uptime SLA</div></div>
+    <div class="stat"><div class="stat-value">0</div><div class="stat-label">Cookies Set</div></div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <h2 class="section-title">Everything you need</h2>
+    <p class="section-subtitle">Built for developers who care about performance and privacy.</p>
+    <div class="feature-grid">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Real-time Events</h3>
+        <p>Page views, clicks, scroll depth, and session duration captured instantly with a sub-2 KB tracker script.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <h3>Privacy by Design</h3>
+        <p>No cookies, no fingerprinting. IPs are SHA-256 hashed before storage. GDPR and CCPA ready out of the box.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Instant Dashboard</h3>
+        <p>Auto-refreshing charts for event distribution, hourly traffic, and top pages. Zero external chart libraries.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛡️</div>
+        <h3>Hardened Backend</h3>
+        <p>Rate limiting, Zod validation, Helmet security headers, and parameterized queries. Secure by default.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🪶</div>
+        <h3>Lightweight SDK</h3>
+        <p>Vanilla JS, zero dependencies. Beacon API for reliable session-end delivery. Passive scroll listener for perf.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗄️</div>
+        <h3>SQLite Storage</h3>
+        <p>Simple, self-hosted, blazing fast for millions of events. WAL mode enabled for concurrent reads and writes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LONG CONTENT (so scroll events can be triggered) -->
+  <section class="section">
+    <h2 class="section-title">How it works</h2>
+    <p class="section-subtitle">Three steps to full analytics coverage.</p>
+    <div class="feature-grid">
+      <div class="card">
+        <div class="card-icon">1️⃣</div>
+        <h3>Add one script tag</h3>
+        <p>Drop <code>&lt;script src="tracker.js"&gt;&lt;/script&gt;</code> into your HTML. The SDK self-initialises, creates a session ID in <code>sessionStorage</code>, and fires a <strong>page_view</strong> event immediately.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">2️⃣</div>
+        <h3>Tag your elements</h3>
+        <p>Add <code>data-track</code> attributes to any buttons or links you want to track. The SDK uses event delegation — a single document-level listener catches all clicks without per-element handlers.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">3️⃣</div>
+        <h3>Open the dashboard</h3>
+        <p>Navigate to <code>/dashboard.html</code> to see live stats. The dashboard polls <code>/api/stats</code> every 30 seconds and renders charts with pure HTML/CSS/SVG — no Chart.js, no D3.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="section" id="pricing">
+    <h2 class="section-title">Simple pricing</h2>
+    <p class="section-subtitle">No surprises. Start free, scale when ready.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <h3>Hobby</h3>
+        <div class="price">$0 <span>/ mo</span></div>
+        <ul class="plan-features">
+          <li>Up to 10,000 events/mo</li>
+          <li>1 site</li>
+          <li>7-day data retention</li>
+          <li>Community support</li>
+        </ul>
+        <button
+          id="plan-hobby"
+          class="btn btn-outline"
+          style="width:100%"
+          data-track="plan-hobby"
+        >
+          Start Free
+        </button>
+      </div>
+      <div class="pricing-card featured">
+        <h3>Pro</h3>
+        <div class="price">$12 <span>/ mo</span></div>
+        <ul class="plan-features">
+          <li>Unlimited events</li>
+          <li>5 sites</li>
+          <li>90-day data retention</li>
+          <li>Email support</li>
+          <li>Custom event schemas</li>
+        </ul>
+        <button
+          id="plan-pro"
+          class="btn btn-primary"
+          style="width:100%"
+          data-track="plan-pro"
+        >
+          Get Pro
+        </button>
+      </div>
+      <div class="pricing-card">
+        <h3>Team</h3>
+        <div class="price">$49 <span>/ mo</span></div>
+        <ul class="plan-features">
+          <li>Unlimited events</li>
+          <li>Unlimited sites</li>
+          <li>1-year data retention</li>
+          <li>Priority support</li>
+          <li>SSO / SAML</li>
+          <li>Audit log</li>
+        </ul>
+        <button
+          id="plan-team"
+          class="btn btn-outline"
+          style="width:100%"
+          data-track="plan-team"
+        >
+          Contact Sales
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section">
+    <h2 class="section-title">Loved by developers</h2>
+    <p class="section-subtitle">Don't take our word for it.</p>
+    <div class="testimonial-grid">
+      <div class="testimonial">
+        <blockquote>"Replaced Google Analytics in an afternoon. The privacy story alone was worth the switch. Dashboard is clean and fast."</blockquote>
+        <cite>— Mia Chen, Lead Engineer @ Replit</cite>
+      </div>
+      <div class="testimonial">
+        <blockquote>"I love that the entire backend is under 300 lines of readable Node.js. Perfect learning project and production-ready."</blockquote>
+        <cite>— Carlos Ruiz, Indie Hacker</cite>
+      </div>
+      <div class="testimonial">
+        <blockquote>"The rate limiting and Zod validation saved us from a scraping incident on day one. Security-first design is rare."</blockquote>
+        <cite>— Priya Nair, CTO @ Finflow</cite>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <h2 class="section-title" style="text-align:center">Frequently asked questions</h2>
+    <div class="faq" style="margin-top:3rem">
+      <div class="faq-item">
+        <h4>Does it use cookies?</h4>
+        <p>No. Session IDs are stored in <code>sessionStorage</code>, which is cleared when the tab closes. No persistent identifiers, no consent banners needed.</p>
+      </div>
+      <div class="faq-item">
+        <h4>How is IP anonymisation handled?</h4>
+        <p>The raw IP address is never stored. Before any database write, the server computes a SHA-256 hash of the IP. The hash can detect duplicate visitors without revealing the actual address.</p>
+      </div>
+      <div class="faq-item">
+        <h4>What happens if the network is slow?</h4>
+        <p>Click and scroll events use <code>fetch</code> with <code>keepalive: true</code>. Session-end events use the Beacon API, which the browser queues and delivers even while the page is unloading.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Can I self-host this?</h4>
+        <p>Yes — that's the whole point. Clone the repo, run <code>npm install</code> in the backend folder, and start the server. SQLite means zero external database setup.</p>
+      </div>
+      <div class="faq-item">
+        <h4>How does rate limiting work?</h4>
+        <p>The <code>/api/events</code> endpoint accepts a maximum of 30 requests per IP address per minute. Exceeding this returns HTTP 429. The dashboard endpoint is not rate-limited.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2>Ready to know your users?</h2>
+    <p>Start in minutes. No credit card required.</p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+      <button
+        id="cta-signup-bottom"
+        class="btn btn-success"
+        data-track="cta-signup-bottom"
+      >
+        Create Free Account
+      </button>
+      <button
+        id="cta-view-dashboard"
+        class="btn btn-outline"
+        data-track="cta-view-dashboard"
+        onclick="window.location.href='dashboard.html'"
+      >
+        Open Dashboard
+      </button>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Built as a learning project · <a href="https://github.com/isikkara/web-analytics-playground">GitHub</a> · MIT License</p>
+  </footer>
+
+  <!-- tracker.js is loaded last so it doesn't block rendering.
+       It fires page_view as soon as it executes, which is fine because
+       the URL and referrer are already available at that point. -->
+  <script src="tracker.js"></script>
+</body>
+</html>
